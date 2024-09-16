@@ -36,10 +36,10 @@ public class ProductService {
         return Optional.ofNullable(reviews).orElse(new ArrayList<>());
     }
 
-    public Product getProduct(Product product, boolean detail) {
+    public Product getProduct(String storeCode, String productCode, boolean detail) {
         CriteriaSearch.Builder builder = CriteriaSearch.builder()
-                .addCriteria("code", product.getCode(), EQUALS)
-                .addCriteria("storeCode", product.getStoreCode(), EQUALS)
+                .addCriteria("code", productCode, EQUALS)
+                .addCriteria("storeCode", storeCode, EQUALS)
                 .addCriteria("deleted", Boolean.FALSE, EQUALS);
 
         if (!detail) {

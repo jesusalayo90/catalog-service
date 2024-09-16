@@ -34,10 +34,7 @@ public class ProductController extends BaseController {
     public ResponseEntity<Product> getProduct(@PathVariable(name = "productId") String productId,
                                               @RequestParam(name = "storeCode") String storeCode,
                                               @RequestParam(name = "detail", required = false, defaultValue = "false") Boolean detail) {
-        Product product = new Product();
-        product.setCode(productId);
-        product.setStoreCode(storeCode);
-        product = productService.getProduct(product, detail);
+        Product product = productService.getProduct(storeCode, productId, detail);
         return product != null? ResponseEntity.ok(product) : ResponseEntity.noContent().build();
     }
 
