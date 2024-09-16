@@ -14,14 +14,8 @@ public class StoreService {
     @Autowired
     private StoreRepo storeRepo;
 
-    public Store getStore(String code, Boolean includeDetail) {
-        Store store = null;
-        if (includeDetail) {
-            store = storeRepo.findRecord(code);
-        } else {
-            //TODO exclude detail field in db query
-        }
-        return store;
+    public Store getStore(String code) {
+        return storeRepo.findRecord(code);
     }
 
     public Store saveStore(Store store) throws ServiceException {
@@ -33,18 +27,20 @@ public class StoreService {
     }
 
     public Store updateStore(Store store) {
-        Store record = getStore(store.getCode(), Boolean.TRUE);
+        Store record = getStore(store.getCode());
         if (record != null && !record.getDeleted()) {
             record.copy(store);
+            record.setUpdatedAt(new Date());
             return storeRepo.updateRecord(record);
         }
         return null;
     }
 
     public Store deleteStore(Store store) {
-        Store record = getStore(store.getCode(), Boolean.TRUE);
+        Store record = getStore(store.getCode());
         if (record != null && !record.getDeleted()) {
             record.setDeleted(Boolean.TRUE);
+            record.setUpdatedAt(new Date());
             return storeRepo.updateRecord(record);
         }
         return null;

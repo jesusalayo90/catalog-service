@@ -40,4 +40,23 @@ public class Product {
     @JsonIgnore
     private Boolean deleted;
 
+    public void copy(Product p, boolean clone) {
+        copy(p);
+        if (clone) {
+            this.setCode(p.getCode());
+            this.setCreatedAt(p.getCreatedAt());
+            this.setDeleted(p.getDeleted());
+        }
+    }
+
+    public void copy(Product p) {
+        this.setName(p.getName());
+        this.setStoreCode(p.getStoreCode());
+        this.setName(p.getName());
+        this.setImageUrl(p.getImageUrl());
+        this.setCategory(p.getCategory());
+        this.setDetail(p.getDetail());
+        this.setVariations(p.getVariations());
+        this.setUpdatedAt(p.getUpdatedAt());
+    }
 }

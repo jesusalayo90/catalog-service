@@ -1,6 +1,6 @@
 package com.mservices.catalog.repository;
 
-import com.mservices.catalog.entity.Store;
+import com.mservices.catalog.entity.Product;
 import com.mservices.catalog.exception.ServiceException;
 import com.mservices.catalog.repository.util.CriteriaSearch;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -8,6 +8,7 @@ import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.stereotype.Repository;
 import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
+import software.amazon.awssdk.enhanced.dynamodb.DynamoDbTable;
 import software.amazon.awssdk.enhanced.dynamodb.Expression;
 import software.amazon.awssdk.enhanced.dynamodb.Key;
 import software.amazon.awssdk.enhanced.dynamodb.model.PageIterable;
@@ -24,7 +25,7 @@ import java.util.stream.Collectors;
 import static com.mservices.catalog.util.ErrorConstants.CTG0100;
 
 @Repository
-public class StoreRepo extends DynamoRepo implements DynamoRecord<Store> {
+public class ProductRepo extends DynamoRepo implements DynamoRecord<Product> {
 
     @Autowired
     private DynamoDbEnhancedClient dynamoDbEnhancedClient;
@@ -32,11 +33,17 @@ public class StoreRepo extends DynamoRepo implements DynamoRecord<Store> {
     private MessageSource messageSource;
 
     @Override
-    public List<Store> findByCriteria(CriteriaSearch criteriaSearch) {
-        List<Store> records = null;
+    public List<Product> findByCriteria(CriteriaSearch criteriaSearch) {
+        List<Product> records = null;
 
         String expression = buildExpressionQuery(criteriaSearch);
         Map<String, AttributeValue> expValues = buildExpressionValues(criteriaSearch);
+
+        DynamoDbTable<Product> table = getTable(dynamoDbEnhancedClient, Product.class);
+        List<String> attributes = table.tableSchema().attributeNames();
+        if (criteriaSearch.getExcludedFields() != null) {
+            attributes = attributes.stream().filter(v -> !criteriaSearch.getExcludedFields().contains(v)).toList();
+        }
 
         ScanEnhancedRequest req = ScanEnhancedRequest.builder()
                 .consistentRead(Boolean.TRUE)
@@ -44,8 +51,9 @@ public class StoreRepo extends DynamoRepo implements DynamoRecord<Store> {
                         .expression(expression)
                         .expressionValues(expValues)
                         .build())
+                .attributesToProject(attributes)
                 .build();
-        PageIterable<Store> pages = getTable(dynamoDbEnhancedClient, Store.class).scan(req);
+        PageIterable<Product> pages = table.scan(req);
 
         if (pages.stream().count() > 0) {
             records = pages.stream().flatMap(p -> p.items().stream()).collect(Collectors.toList());
@@ -55,13 +63,13 @@ public class StoreRepo extends DynamoRepo implements DynamoRecord<Store> {
     }
 
     @Override
-    public List<Store> findAll() {
-        List<Store> records = null;
+    public List<Product> findAll() {
+        List<Product> records = null;
 
         ScanEnhancedRequest req = ScanEnhancedRequest.builder()
                 .consistentRead(Boolean.TRUE)
                 .build();
-        PageIterable<Store> pages = getTable(dynamoDbEnhancedClient, Store.class).scan(req);
+        PageIterable<Product> pages = getTable(dynamoDbEnhancedClient, Product.class).scan(req);
 
         if (pages.stream().count() > 0) {
             records = pages.stream().flatMap(p -> p.items().stream()).collect(Collectors.toList());
@@ -71,41 +79,43 @@ public class StoreRepo extends DynamoRepo implements DynamoRecord<Store> {
     }
 
     @Override
-    public Store findRecord(String... keys) {
-        Store record = null;
+    public Product findRecord(String... keys) {
+        Product record = null;
         if (keys != null && keys.length > 0) {
-            String key = keys[0];
-            record = getTable(dynamoDbEnhancedClient, Store.class).getItem(Key.builder().partitionValue(key).build());
+            String storeCode = keys[0];
+            String productCode = keys[1];
+            Key keyReq = Key.builder().partitionValue(productCode).sortValue(storeCode).build();
+            record = getTable(dynamoDbEnhancedClient, Product.class).getItem(keyReq);
         }
         return record;
     }
 
     @Override
-    public Store saveRecord(Store record) throws ServiceException {
+    public Product saveRecord(Product record) throws ServiceException {
         try {
-            PutItemEnhancedRequest<Store> request = PutItemEnhancedRequest.builder(Store.class)
+            PutItemEnhancedRequest<Product> request = PutItemEnhancedRequest.builder(Product.class)
                     .conditionExpression(Expression.builder()
                             .expression("attribute_not_exists(storeCode)")
                             .build())
                     .item(record)
                     .build();
 
-            getTable(dynamoDbEnhancedClient, Store.class).putItem(request);
+            getTable(dynamoDbEnhancedClient, Product.class).putItem(request);
         } catch (DynamoDbException dbException) {
-            String msg = messageSource.getMessage(CTG0100, new String[] {"Store"}, LocaleContextHolder.getLocale());
+            String msg = messageSource.getMessage(CTG0100, new String[] {"Product"}, LocaleContextHolder.getLocale());
             throw new ServiceException(CTG0100, msg);
         }
         return record;
     }
 
     @Override
-    public Store updateRecord(Store record) {
-        UpdateItemEnhancedRequest<Store> request = UpdateItemEnhancedRequest.builder(Store.class)
+    public Product updateRecord(Product record) {
+        UpdateItemEnhancedRequest<Product> request = UpdateItemEnhancedRequest.builder(Product.class)
                 .item(record)
                 .ignoreNulls(Boolean.TRUE)
                 .build();
 
-        getTable(dynamoDbEnhancedClient, Store.class).updateItem(request);
+        getTable(dynamoDbEnhancedClient, Product.class).updateItem(request);
         return record;
     }
 }
