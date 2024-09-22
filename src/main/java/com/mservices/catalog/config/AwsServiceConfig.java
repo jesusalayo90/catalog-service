@@ -11,6 +11,7 @@ import software.amazon.awssdk.enhanced.dynamodb.DynamoDbEnhancedClient;
 import software.amazon.awssdk.enhanced.dynamodb.internal.client.ExtensionResolver;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
+import software.amazon.awssdk.services.s3.S3Client;
 
 @Configuration
 public class AwsServiceConfig {
@@ -20,6 +21,15 @@ public class AwsServiceConfig {
     private String amazonAWSSecretKey;
     @Value("${amazon.aws.region}")
     private String amazonAWSRegion;
+
+    @Bean
+    public S3Client s3Client(AwsCredentialsProvider awsCredentialsProvider) {
+        Region region = Region.of(amazonAWSRegion);
+        return S3Client.builder()
+                .region(region)
+                .credentialsProvider(awsCredentialsProvider)
+                .build();
+    }
 
     @Bean
     public DynamoDbClient dynamoDbClient(AwsCredentialsProvider awsCredentialsProvider) {

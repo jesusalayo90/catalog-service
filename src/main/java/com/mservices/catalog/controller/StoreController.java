@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import static com.mservices.catalog.controller.util.BindingResultUtil.formatErrors;
@@ -43,6 +44,15 @@ public class StoreController extends BaseController {
         }
         store.setCode(storeCode);
         store = storeService.updateStore(store);
+        return store != null? ResponseEntity.ok(store) : ResponseEntity.notFound().build();
+    }
+
+    @PutMapping(value = "/{storeCode}/logo", consumes = "multipart/form-data")
+    public ResponseEntity<Store> uploadStoreLogo(@PathVariable(name = "storeCode") String storeCode,
+                                                 @RequestPart(name = "image") MultipartFile imageFile) throws ServiceException {
+        Store store = new Store();
+        store.setCode(storeCode);
+        store = storeService.updateStoreImage(store, imageFile);
         return store != null? ResponseEntity.ok(store) : ResponseEntity.notFound().build();
     }
 
