@@ -1,5 +1,6 @@
 package com.mservices.catalog.config;
 
+import com.mservices.catalog.repository.extension.UuidGeneratorExtension;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -12,6 +13,9 @@ import software.amazon.awssdk.enhanced.dynamodb.internal.client.ExtensionResolve
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.s3.S3Client;
+
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Configuration
 public class AwsServiceConfig {
@@ -44,7 +48,8 @@ public class AwsServiceConfig {
     public DynamoDbEnhancedClient dynamoDbEnhancedClient(DynamoDbClient dynamoDbClient) {
         return DynamoDbEnhancedClient.builder()
                 .dynamoDbClient(dynamoDbClient)
-                .extensions(ExtensionResolver.defaultExtensions())
+                .extensions(Stream.concat(ExtensionResolver.defaultExtensions().stream(),
+                        Stream.of(new UuidGeneratorExtension())).collect(Collectors.toList()))
                 .build();
     }
 
